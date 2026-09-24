@@ -50,3 +50,11 @@ The private custom-app repository could not be cloned from inside the container 
 Final live checks passed: Frappe 16.34.0, ERPNext 16.35.0, and `ojaz_erp 0.1.0 main` are registered; the site scheduler is enabled; workers are online; MariaDB is healthy; Redis cache and queue are running; backend, frontend, websocket, short queue, long queue, and scheduler containers are running; the frontend returns HTTP 200; and the OJAZ CSS, JavaScript, and logo URLs each return HTTP 200. The ERPNext image does not contain Node.js, so `bench build` cannot bundle assets; the plain OJAZ assets are served through the repeatable runtime asset-link helper instead.
 
 The next engineering phase is to make this topology durable rather than sandbox-injected: build a custom Frappe image containing the OJAZ app, Node.js, and the asset-link/build step; provision persistent managed infrastructure; connect the deployment registry; then implement Stripe billing and automated tenant provisioning as the final phase.
+
+## Durable image milestone
+
+A reproducible `Dockerfile` now builds from `frappe/erpnext:v16.35.0`, installs Node.js and npm, copies the OJAZ app into the standard Frappe package layout, installs it into Bench's Python environment, links the plain branding assets, and supports an optional `OJAZ_BUILD_BUNDLES=1` switch for future formal Frappe bundle metadata. The default image build intentionally serves the current plain CSS, JavaScript, and logo directly because Frappe's bundle compiler is unnecessary for these assets.
+
+The local image `ojaz-erp:dev` built successfully. Strict image validation passed for Node.js `v18.20.4`, Python imports for `ojaz_erp` and its nested module, and all three OJAZ static assets. Site-volume files such as `sites/apps.txt` remain runtime-owned by design; the target site must still install the app after the persistent site volume is created.
+
+The deployment compose bundle now accepts `OJAZ_IMAGE` for every Frappe service and documents the durable image workflow. The next production tasks are image publication to a controlled registry, persistent multi-service hosting with durable MariaDB/Redis/sites/logs volumes, and a final full-stack acceptance run against the published image. Stripe billing and automated tenant provisioning remain deferred.

@@ -40,3 +40,13 @@ Stripe billing, per-user subscription enforcement, automated site provisioning, 
 ## Latest validation results
 
 The OJAZ custom-app structure validator passed. The installation script was exercised and exited with the expected code `2` because Frappe Bench is not installed in the current environment. The existing Render `nexus-erp` health endpoint timed out with no response during the read-only check; this is not an OJAZ ERP deployment and is not being treated as a valid ERPNext health signal.
+
+## Live runtime milestone completed
+
+Docker and Docker Compose v2 were installed in the sandbox. The official ERPNext v16.35.0 image, MariaDB 11.8, and Redis 6.2 images were pulled successfully. The Frappe topology was started with the sandbox-compatible Docker daemon configuration. The `frontend` site was created and ERPNext was installed.
+
+The private custom-app repository could not be cloned from inside the container without credentials, so the already-validated local app source was injected into the runtime without exposing repository credentials. The app package was corrected to use the standard nested Frappe module namespace, installed into Bench's Python environment, registered on the `frontend` site, migrated, and verified with `bench --site frontend list-apps`.
+
+Final live checks passed: Frappe 16.34.0, ERPNext 16.35.0, and `ojaz_erp 0.1.0 main` are registered; the site scheduler is enabled; workers are online; MariaDB is healthy; Redis cache and queue are running; backend, frontend, websocket, short queue, long queue, and scheduler containers are running; the frontend returns HTTP 200; and the OJAZ CSS, JavaScript, and logo URLs each return HTTP 200. The ERPNext image does not contain Node.js, so `bench build` cannot bundle assets; the plain OJAZ assets are served through the repeatable runtime asset-link helper instead.
+
+The next engineering phase is to make this topology durable rather than sandbox-injected: build a custom Frappe image containing the OJAZ app, Node.js, and the asset-link/build step; provision persistent managed infrastructure; connect the deployment registry; then implement Stripe billing and automated tenant provisioning as the final phase.

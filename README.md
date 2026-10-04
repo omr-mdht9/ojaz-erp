@@ -1,177 +1,51 @@
+# NUMERA ERP runtime deployment bundle
 
-<div align="center">
-    <a href="https://frappe.io/erpnext">
-	<img src="./erpnext/public/images/v16/erpnext.svg" alt="ERPNext Logo" height="80px" width="80px"/>
-    </a>
-    <h2>ERPNext</h2>
-    <div align="center">
-        <p>Powerful, Intuitive and Open-Source ERP</p>
-    </div>
+This directory packages the official Frappe Docker single-stack topology as a NUMERA ERP deployment reference. The stack includes MariaDB, Redis cache, Redis queue, configurator, one-time site creation, Frappe backend, nginx frontend, websocket service, short and long queue workers, and the scheduler. Persistent volumes are required for MariaDB data, Redis queue data, Frappe sites, and logs.
 
-[![Learn on Frappe School](https://img.shields.io/badge/Frappe%20School-Learn%20ERPNext-blue?style=flat-square)](https://frappe.school)<br><br>
-[![CI](https://github.com/frappe/erpnext/actions/workflows/server-tests-mariadb.yml/badge.svg?event=schedule)](https://github.com/frappe/erpnext/actions/workflows/server-tests-mariadb.yml)
-[![docker pulls](https://img.shields.io/docker/pulls/frappe/erpnext.svg)](https://hub.docker.com/r/frappe/erpnext)
+## Integration readiness
 
-</div>
+`INTEGRATION_READINESS.md` defines the future hosting, domain/DNS, email, Stripe, independent-backup, and monitoring contracts. Those integrations are intentionally disabled during free development. `.env.production.example` contains placeholders only, and `../scripts/ojaz-integration-config-check.sh` validates that no external side effects are enabled.
 
-<div align="center">
-	<img src="./erpnext/public/images/v16/hero_image.png" alt="ERPNext Hero Image"/>
-</div>
+## Durable NUMERA image
 
-<div align="center">
-	<a href="https://erpnext-demo.frappe.cloud/api/method/erpnext_demo.erpnext_demo.auth.login_demo">Live Demo</a>
-	-
-	<a href="https://frappe.io/erpnext">Website</a>
-	-
-	<a href="https://docs.frappe.io/erpnext/">Documentation</a>
-</div>
+Build the custom image from the `omr-mdht9/ojaz-erp-custom` repository:
 
-## ERPNext
-
-100% Open-Source ERP System to help you run your business.
-
-### Motivation
-
-Running a business is a complex task - handling invoices, tracking stock, managing personnel, and other daily operations. In a market where software is sold separately to manage each of these tasks, ERPNext does all of the above and more, for free.
-
-### Key Features
-
-- **Accounting**: All the tools you need to manage cash flow in one place, right from recording transactions to summarizing and analyzing financial reports.
-- **Order Management**: Track inventory levels, replenish stock, and manage sales orders, customers, suppliers, shipments, deliverables, and order fulfillment.
-- **Manufacturing**: Simplifies the production cycle, helps track material consumption, exhibits capacity planning, handles subcontracting, and more!
-- **Asset Management**: From purchase to disposal, IT infrastructure to equipment. Covers every branch of your organization, all in one centralized system.
-- **Projects**: Deliver both internal and external projects on time, budget and profitability. Track tasks, timesheets, and issues by project.
-
-<details open>
-
-<summary>More</summary>
-	<img src="https://erpnext.com/files/v16_bom.png"/>
-	<img src="https://erpnext.com/files/v16_stock_summary.png"/>
-	<img src="https://erpnext.com/files/v16_job_card.png"/>
-	<img src="https://erpnext.com/files/v16_tasks.png"/>
-</details>
-
-### Under the Hood
-
-- [**Frappe Framework**](https://github.com/frappe/frappe): A full-stack web application framework written in Python and JavaScript. The framework provides a robust foundation for building web applications, including a database abstraction layer, user authentication, and a REST API.
-
-- [**Frappe UI**](https://github.com/frappe/frappe-ui): A Vue-based UI library, to provide a modern user interface. The Frappe UI library provides a variety of components that can be used to build single-page applications on top of the Frappe Framework.
-
-## Production Setup
-
-### Managed Hosting
-
-You can try [Frappe Cloud](https://frappecloud.com), a simple, user-friendly, and sophisticated [open-source](https://github.com/frappe/press) platform to host Frappe applications reliably and securely.
-
-It handles installation, setup, upgrades, monitoring, maintenance, and support of your Frappe deployments. It is a fully featured developer platform with an ability to manage and control multiple Frappe deployments.
-
-<div>
-	<a href="https://erpnext-demo.frappe.cloud/app/home" target="_blank" rel="noopener noreferrer">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/try-on-fc-white.png">
-			<img src="https://frappe.io/files/try-on-fc-black.png" alt="Try on Frappe Cloud" height="28" />
-		</picture>
-	</a>
-</div>
-
-
-### Self-Hosted
-#### Docker
-
-See [Frappe Docker Documentation](https://github.com/frappe/frappe_docker) for full documentation & FAQ on Docker setup
-
-#### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose v2](https://docs.docker.com/compose/)
-- [git](https://docs.github.com/en/get-started/getting-started-with-git/set-up-git)
-
-> For Docker basics and best practices refer to Docker's [documentation](https://docs.docker.com)
-
-### Try on your environment
-
-> **⚠️ Disposable demo only**
->
-> **This setup is intended for quick evaluation. Expect to throw the environment away.** You will not be able to install custom apps to this setup. For production deployments, custom configurations, and detailed explanations, see the full documentation.
-
-First clone the repo:
-
-```sh
-git clone https://github.com/frappe/frappe_docker
-cd frappe_docker
+```bash
+docker build -t ghcr.io/<owner>/ojaz-erp:<tag> .
 ```
 
-Then run:
+Set `OJAZ_IMAGE` to that image when starting the topology. Every Frappe service in `compose.ojaz-reference.yaml` accepts the variable and falls back to the upstream ERPNext image for baseline testing:
 
-```sh
-docker compose -f pwd.yml up -d
+```bash
+export OJAZ_IMAGE=ghcr.io/<owner>/ojaz-erp:<tag>
+docker compose --env-file .env -f compose.ojaz-reference.yaml up -d
 ```
-Wait for a couple of minutes for ERPNext site to be created or check the `create-site` container logs before opening browser on port `8080`. (username: `Administrator`, password: `admin`)
 
-See [Frappe Docker](https://github.com/frappe/frappe_docker/blob/main/docs/01-getting-started/03-arm64.md) for ARM based docker setup
+The image contains the NUMERA app package, Node.js, the Python editable install, and direct static asset links. Frappe site volumes are intentionally populated at runtime; after site creation, run the NUMERA installation script against the target site.
 
+## Bring-up sequence
 
-## Development Setup
-### Manual Install
+1. Create strong secrets outside source control and provide `MARIADB_ROOT_PASSWORD` and `SITE_ADMIN_PASSWORD` to Compose.
+2. Build and publish the durable NUMERA image, then set `OJAZ_IMAGE`.
+3. Start the stack with `docker compose --env-file .env -f compose.ojaz-reference.yaml up -d`.
+4. Wait for configurator and create-site to complete.
+5. Run `scripts/install_ojaz_app.sh` from inside the Frappe runtime with `SITE_NAME` set, or use the runtime app-install procedure documented in the custom-app repository.
+6. Run `scripts/link_ojaz_assets.sh` in each frontend/runtime container when using a prebuilt site volume that predates the image.
+7. Verify the frontend, websocket, queue workers, scheduler, MariaDB, Redis, and installed app health before placing a customer behind the service.
 
-The Easy Way: our install script for bench will install all dependencies (e.g. MariaDB). See https://github.com/frappe/bench for more details.
+## Current hosting boundary
 
-New passwords will be created for the ERPNext "Administrator" user, the MariaDB root user, and the Frappe user (the script displays the passwords and saves them to ~/frappe_passwords.txt).
+The connected Render workspace has only the pre-existing `nexus-erp` Docker web service and no validated MariaDB/Redis topology. Do not deploy ERPNext as a single Render web service: it would not provide a valid production runtime. Use a Docker-capable persistent host or a managed multi-service topology.
 
+## Acceptance checks
 
-### Local
+- `bench --site <site> list-apps` includes `erpnext` and `ojaz_erp`.
+- `bench --site <site> doctor` reports no blocking failures.
+- The frontend loads through the configured host and returns a successful health response.
+- NUMERA CSS, JavaScript, and logo URLs return HTTP 200.
+- Websocket connection succeeds.
+- A background job completes through both queue workers.
+- Scheduler logs show a successful scheduled cycle.
+- MariaDB and both Redis services pass their health checks.
 
-To setup the repository locally follow the steps mentioned below:
-
-1. Setup bench by following the [Installation Steps](https://frappeframework.com/docs/user/en/installation) and start the server
-   ```
-   bench start
-   ```
-
-2. In a separate terminal window, run the following commands:
-   ```
-   # Create a new site
-   bench new-site erpnext.localhost
-   ```
-
-3. Get the ERPNext app and install it
-   ```
-   # Get the ERPNext app
-   bench get-app https://github.com/frappe/erpnext
-
-   # Install the app
-   bench --site erpnext.localhost install-app erpnext
-   ```
-
-4. Open the URL `http://erpnext.localhost:8000/app` in your browser, you should see the app running
-
-## Learning and Community
-
-1. [Frappe School](https://school.frappe.io) - Learn Frappe Framework and ERPNext from the various courses by the maintainers or from the community.
-2. [Official documentation](https://docs.erpnext.com/) - Extensive documentation for ERPNext.
-3. [Discussion Forum](https://discuss.frappe.io/c/erpnext/6) - Engage with the community of ERPNext users and service providers.
-4. [Telegram Group](https://erpnext_public.t.me) - Get instant help from huge community of users.
-
-
-## Contributing
-
-1. [Issue Guidelines](https://github.com/frappe/erpnext/wiki/Issue-Guidelines)
-2. [Report Security Vulnerabilities](https://erpnext.com/security)
-3. [Pull Request Requirements](https://github.com/frappe/erpnext/wiki/Contribution-Guidelines)
-4. [Translations](https://crowdin.com/project/frappe)
-
-
-## Logo and Trademark Policy
-
-Please read our [Logo and Trademark Policy](TRADEMARK_POLICY.md).
-
-<br />
-<br />
-<div align="center" style="padding-top: 0.75rem;">
-	<a href="https://frappe.io" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/Frappe-white.png">
-			<img src="https://frappe.io/files/Frappe-black.png" alt="Frappe Technologies" height="28"/>
-		</picture>
-	</a>
-</div>
+Stripe billing and automated tenant-site provisioning remain intentionally deferred until this baseline is deployed durably and multi-site isolation is validated.
